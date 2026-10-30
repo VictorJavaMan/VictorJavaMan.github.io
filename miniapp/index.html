@@ -89,7 +89,10 @@
 <script>
 (() => {
   const tg = window.Telegram && window.Telegram.WebApp;
-  const inTelegram = !!(tg && tg.initData);
+  // initData is empty for Mini Apps opened from a keyboard button, so detect Telegram by its platform
+  // or by the launch parameters it adds to the URL.
+  const inTelegram = !!(tg && ((tg.platform && tg.platform !== 'unknown')
+    || /tgWebApp(Platform|Version|ThemeParams)/.test(location.hash + location.search)));
   document.documentElement.classList.toggle('tg', inTelegram);
   document.body.classList.toggle('no-tg', !inTelegram);
   if (tg) { tg.ready(); tg.expand(); }
@@ -214,6 +217,7 @@
     $('footer').textContent = catalog.t
       ? 'Показаны не все скрипты: список слишком длинный для кнопки Telegram.'
       : 'Список обновляется, когда бот присылает новый пульт (/keyboard).';
+    if (tg) $('footer').textContent += ' · Telegram ' + (tg.platform || '?') + ' ' + (tg.version || '');
   }
 
   function openDetail(index) {
@@ -241,7 +245,7 @@
   }
 
   function send(command) {
-    if (!inTelegram || typeof tg.sendData !== 'function') {
+    if (!tg || typeof tg.sendData !== 'function') {
       showError('Откройте пульт кнопкой «📱 Пульт» внизу чата с ботом.');
       return;
     }
